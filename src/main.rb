@@ -1,5 +1,7 @@
 #!/usr/bin/env ruby
 
+# 取りこぼしある？
+# たまに繋げられない問題
 require 'net/https'
 require 'io/console'
 require 'nokogiri'
@@ -8,10 +10,10 @@ require 'fileutils'
 
 def login_nicovideo(mail)
 
-	#print("Pass: ")
-	#pass = STDIN.noecho(&:gets).chomp()
-	#puts
-	pass = "kuukijuu"
+	print("Pass: ")
+	pass = STDIN.noecho(&:gets).chomp()
+	puts
+	
 	host = 'secure.nicovideo.jp'
 	path = '/secure/login?site=niconico'
 	body = "mail=#{mail}&password=#{pass}"
@@ -86,15 +88,25 @@ def save_url(url, file_name=File.basename(url), dir_name)
 	end
 end
 
+# comic のタイトルにクッキーいらんくね
+def get_title(cookie, path="/comic/2783/")
+	response = get_response(cookie, path)
+
+	doc = Nokogiri::HTML.parse(response.body)
+	return doc.css('//meta[property="og:title"]/@content').to_s.gsub(/\//, "-")
+end
+
 cookie = login_nicovideo("dmcvpedf1@yahoo.co.jp")
+title = get_title(cookie)
 paths = get_chapter_url(cookie)
-# サブタイトル取得したいが、面倒なのでindexで。
+# path を可変に
 for path, ind in paths.each_with_index
+	chapter = get_title(cookie, path)
 	pict_urls = get_chapter(cookie, path)
 	pict_urls.each_with_index do |pict_url, i|
 		puts pict_url
 		file_name="#{i}.JPEG"
 		# 拡張子判別機能 JPEG
-		save_url(pict_url, file_name, ind)
+		save_url(pict_url, file_name, File.join(title, chapter))
 	end
 end
