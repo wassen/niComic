@@ -1,19 +1,20 @@
 #!/usr/bin/env ruby
 
-# 取りこぼしある？
-# たまに繋げられない問題
 require 'net/https'
 require 'io/console'
 require 'nokogiri'
 require 'open-uri'
 require 'fileutils'
 
-def login_nicovideo(mail)
+def input_item(item_name, hide=false)
+	print("#{item_name}: ")
+	pass = hide ? STDIN.noecho(&:gets) : gets()
+	if hide then puts end
+	return pass.chomp()
+end
 
-	print("Pass: ")
-	pass = STDIN.noecho(&:gets).chomp()
-	puts
-	
+def login_nicovideo(mail, pass)
+
 	host = 'secure.nicovideo.jp'
 	path = '/secure/login?site=niconico'
 	body = "mail=#{mail}&password=#{pass}"
@@ -96,7 +97,17 @@ def get_title(cookie, path="/comic/2783/")
 	return doc.css('//meta[property="og:title"]/@content').to_s.gsub(/\//, "-")
 end
 
-cookie = login_nicovideo("dmcvpedf1@yahoo.co.jp")
+$cookie=''
+
+while $cookie==''
+	mail = input_item("Mail")
+	pass = input_item("Pass", true)
+	$cookie = login_nicovideo(mail, pass)
+	if $cookie == ''
+		puts "認証失敗しました。"
+	end
+end
+cookie=$cookie
 title = get_title(cookie)
 paths = get_chapter_url(cookie)
 # path を可変に
